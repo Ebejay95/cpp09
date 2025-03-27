@@ -71,7 +71,7 @@ void RPN::rpn_filter(char val) {
 }
 
 int RPN::success(double result) {
-	std::cout << "\x1b[32mResult\033[0m: " << result << std::endl;
+	std::cout << "\x1b[32m" << result << "\033[0m" << std::endl;
 	reset();
 	return 1;
 }
@@ -93,6 +93,10 @@ void RPN::reset(void) {
 int RPN::run(char *seed) {
 	while (seed[walker] != '\0' && !error)
 	{
+		if (walker % 2 == 1 && seed[walker] != ' ')
+			return throw_error("operators and numbers must be separated by space");
+		if (seed[walker + 1] == '\0' && seed[walker] == ' ')
+			return throw_error("operators and numbers must be separated by space");
 		rpn_filter(seed[walker]);
 		if (error)
 			return throw_error(error_message);
@@ -116,7 +120,6 @@ void RPN::rpn(char val) {
 
 void RPN::rpn_push_numeric(char val) {
 	rpn_stack.push(static_cast<double>(val - '0'));
-	std::cout << "\x1b[33mrpn_push_numeric\033[0m: " << val << std::endl;
 	return;
 }
 
@@ -153,9 +156,6 @@ void RPN::rpn_push_operator(char op) {
 	rpn_stack.pop();
 	double first = rpn_stack.top();
 	rpn_stack.pop();
-
-	std::cout << "\x1b[33mrpn_push_operator\033[0m: " << op << std::endl;
-	std::cout << "\x1b[34mrpn_perform\033[0m: " << first << " "<< op << " " << second << std::endl;
 
 	rpn_stack.push(calculate(first, op, second));
 	return;

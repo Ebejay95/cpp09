@@ -5,7 +5,6 @@
 #include <stack>
 #include <string>
 #include <locale>
-#include <limits>
 
 class RPN {
 	private:

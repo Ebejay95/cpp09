@@ -10,14 +10,14 @@ BitcoinExchange::BitcoinExchange(const BitcoinExchange& src) {
 	*this = src;
 }
 
-BitcoinExchange::~BitcoinExchange() {}
-
 BitcoinExchange& BitcoinExchange::operator=(const BitcoinExchange& rhs) {
 	if (this != &rhs) {
 		this->_database = rhs._database;
 	}
 	return *this;
 }
+
+BitcoinExchange::~BitcoinExchange() {}
 
 bool BitcoinExchange::isValidDate(const std::string& date) const {
 	if (date.length() != 10 || date[4] != '-' || date[7] != '-')
