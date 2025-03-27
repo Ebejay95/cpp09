@@ -1,6 +1,5 @@
 #include "BitcoinExchange.hpp"
 
-// Constructors and destructor
 BitcoinExchange::BitcoinExchange() {}
 
 BitcoinExchange::BitcoinExchange(const std::string& databaseFile) {
@@ -13,7 +12,6 @@ BitcoinExchange::BitcoinExchange(const BitcoinExchange& src) {
 
 BitcoinExchange::~BitcoinExchange() {}
 
-// Operator overloads
 BitcoinExchange& BitcoinExchange::operator=(const BitcoinExchange& rhs) {
 	if (this != &rhs) {
 		this->_database = rhs._database;
@@ -21,13 +19,10 @@ BitcoinExchange& BitcoinExchange::operator=(const BitcoinExchange& rhs) {
 	return *this;
 }
 
-// Private member functions
 bool BitcoinExchange::isValidDate(const std::string& date) const {
-	// Check format YYYY-MM-DD
 	if (date.length() != 10 || date[4] != '-' || date[7] != '-')
 		return false;
 
-	// Check year, month, day are digits
 	for (int i = 0; i < 4; i++)
 		if (!isdigit(date[i])) return false;
 	for (int i = 5; i < 7; i++)
@@ -35,20 +30,16 @@ bool BitcoinExchange::isValidDate(const std::string& date) const {
 	for (int i = 8; i < 10; i++)
 		if (!isdigit(date[i])) return false;
 
-	// Extract values
 	int year = std::atoi(date.substr(0, 4).c_str());
 	int month = std::atoi(date.substr(5, 2).c_str());
 	int day = std::atoi(date.substr(8, 2).c_str());
 
-	// Check ranges
 	if (year < 1 || month < 1 || month > 12 || day < 1 || day > 31)
 		return false;
 
-	// Check appropriate number of days for the month
 	if (month == 4 || month == 6 || month == 9 || month == 11) {
 		if (day > 30) return false;
 	} else if (month == 2) {
-		// Check for leap year
 		bool isLeapYear = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
 		if (day > (isLeapYear ? 29 : 28)) return false;
 	}
@@ -61,34 +52,27 @@ bool BitcoinExchange::isValidValue(const float value) const {
 }
 
 std::string BitcoinExchange::findClosestDate(const std::string& date) const {
-	// If the exact date exists, return it
 	if (_database.find(date) != _database.end())
 		return date;
 
-	// Find the closest date that is lower than the input date
 	std::map<std::string, float>::const_iterator it = _database.lower_bound(date);
 
-	// If the date is less than the earliest date, return the first date
 	if (it == _database.begin())
 		return it->first;
 
-	// If the date is greater than or equal to a date in the database, go back one step
 	if (it != _database.end() && !(date < it->first))
 		return it->first;
 
-	// Otherwise, return the previous date
 	--it;
 	return it->first;
 }
 
-// Public member functions
 bool BitcoinExchange::loadDatabase(const std::string& databaseFile) {
 	std::ifstream file(databaseFile.c_str());
 	if (!file.is_open())
 		throw FileOpenException();
 
 	std::string line;
-	// Skip header line
 	std::getline(file, line);
 
 	while (std::getline(file, line)) {
@@ -96,7 +80,6 @@ bool BitcoinExchange::loadDatabase(const std::string& databaseFile) {
 		std::string date;
 		float value;
 
-		// Parse date and value separated by comma
 		if (std::getline(iss, date, ',') && iss >> value) {
 			if (isValidDate(date)) {
 				_database[date] = value;
@@ -126,7 +109,6 @@ void BitcoinExchange::processInputFile(const std::string& inputFile) {
 		throw FileOpenException();
 
 	std::string line;
-	// Skip header line
 	std::getline(file, line);
 
 	while (std::getline(file, line)) {
@@ -135,9 +117,7 @@ void BitcoinExchange::processInputFile(const std::string& inputFile) {
 		std::string separator;
 		float value;
 
-		// Parse date and value separated by pipe (|)
 		if (std::getline(iss, date, '|') && iss >> value) {
-			// Trim whitespace from date
 			date.erase(0, date.find_first_not_of(" \t"));
 			date.erase(date.find_last_not_of(" \t") + 1);
 
