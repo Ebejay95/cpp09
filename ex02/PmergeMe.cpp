@@ -2,12 +2,18 @@
 
 PmergeMe::PmergeMe() : error(0), error_message(""), walker(0) {}
 
-PmergeMe::PmergeMe(const PmergeMe& src) : error(src.error), error_message(src.error_message), walker(src.walker) {
-
+PmergeMe::PmergeMe(const PmergeMe& src) :
+	pmerge_me_vector(src.pmerge_me_vector),
+	pmerge_me_queue(src.pmerge_me_queue),
+	error(src.error),
+	error_message(src.error_message),
+	walker(src.walker) {
 }
 
 PmergeMe& PmergeMe::operator=(const PmergeMe& src) {
 	if (this != &src) {
+		pmerge_me_vector = src.pmerge_me_vector;
+		pmerge_me_queue = src.pmerge_me_queue;
 		error = src.error;
 		error_message = src.error_message;
 		walker = src.walker;
@@ -17,8 +23,16 @@ PmergeMe& PmergeMe::operator=(const PmergeMe& src) {
 
 PmergeMe::~PmergeMe() {}
 
-int PmergeMe::is_numeric(char c) {
-	return std::isdigit(c, std::locale());
+int PmergeMe::is_numeric(char *arg) {
+	int i = 0;
+	while (arg[i]) {
+		if (!std::isdigit(arg[i], std::locale()))
+			return 0;
+		i++;
+	}
+	if (i == 0)
+		return 0;
+	return 1;
 }
 
 int PmergeMe::is_decimal(char c) {
@@ -26,7 +40,7 @@ int PmergeMe::is_decimal(char c) {
 }
 
 int PmergeMe::is_pmmchar(char c) {
-	return (is_numeric(c) || c == ' ' || c == '/' || c == '+' || c == '*' || c == '-');
+	return (std::isdigit(c, std::locale()) || c == ' ' || c == '/' || c == '+' || c == '*' || c == '-');
 }
 
 void PmergeMe::pmm_filter(char val) {
@@ -59,23 +73,33 @@ void PmergeMe::reset(void) {
 	walker = 0;
 }
 
-int PmergeMe::run(char *seed) {
-	while (seed[walker] != '\0' && !error)
-	{
-		if (walker % 2 == 1 && seed[walker] != ' ')
-			return throw_error("operators and numbers must be separated by space");
-		if (seed[walker + 1] == '\0' && seed[walker] == ' ')
-			return throw_error("operators and numbers must be separated by space");
-		pmm_filter(seed[walker]);
-		if (error)
-			return throw_error(error_message);
+void PmergeMe::fill_queue(char *arg) {
+	std::stringstream ss(arg);
+	int num;
+	ss >> num;
+	pmerge_me_queue.push(num);
+}
 
+void PmergeMe::fill_vector(char *arg) {
+	std::stringstream ss(arg);
+	int num;
+	ss >> num;
+	pmerge_me_vector.push_back(num);
+}
+
+int PmergeMe::run(int argc, char *argv[]) {
+	if (argc == 1)
+		return throw_error("usage is ./PmergeMe [n numeric unsigned arguments]");
+	walker = 1;
+	while (walker < argc)
+	{
+		if (!is_numeric(argv[walker]))
+			return throw_error(std::string("each argument must be numeric unsigned and ") + argv[walker] + " is not");
+		fill_queue(argv[walker]);
+		fill_vector(argv[walker]);
 		walker++;
 	}
-	if (walker <= 0)
+	if (walker <= 1)
 		return throw_error("empty seeds cannot be processed");
 	return success(42);
 }
-
-
-
