@@ -21,13 +21,13 @@ class RPN {
 		void					rpn_push_operator(char val);
 		double					calculate(double first, char op, double second);
 		void					reset(void);
+		int						success(double result);
 
 	public:
 								RPN();
 								RPN(const RPN& src);
 								RPN& operator=(const RPN& src);
 								~RPN();
-		int						success(double result);
 		int						throw_error(std::string message);
 		int						run(char *seed);
 };
