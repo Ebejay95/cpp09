@@ -17,30 +17,15 @@
 # define W "\033[0;97m"
 # define D "\033[0m"
 # define RED "\x1b[31m"
-# define GREEN "\x1b[32m"
-# define YELLOW "\x1b[33m"
-# define BLUE "\x1b[34m"
-# define MAGENTA "\x1b[35m"
-# define CYAN "\x1b[36m"
-# define BRIGHT_RED     "\x1b[91m"
-# define BRIGHT_GREEN   "\x1b[92m"
-# define BRIGHT_YELLOW  "\x1b[93m"
-# define BRIGHT_BLUE    "\x1b[94m"
-# define BRIGHT_MAGENTA "\x1b[95m"
-# define BRIGHT_CYAN    "\x1b[96m"
-# define BRIGHT_WHITE   "\x1b[97m"
-# define COLOR_RESET "\x1b[0m"
 
-// Generic print_container for containers with iterators
-template <typename Container>
-void print_container(const Container& container) {
-	typename Container::const_iterator it;
+template <typename T>
+void print_container(const T& container) {
+	typename T::const_iterator it;
 	for (it = container.begin(); it != container.end(); ++it) {
 		std::cout << *it << " ";
 	}
 }
 
-// Specialized version for std::queue - make it inline to avoid duplicate symbol errors
 inline void print_container(const std::queue<int>& q) {
 	std::queue<int> temp = q;
 	while (!temp.empty()) {
@@ -49,23 +34,32 @@ inline void print_container(const std::queue<int>& q) {
 	}
 }
 
-// Function to print before sorting
-template <typename Container>
-void print_before_sort(const Container& container, const std::string& container_name) {
-	std::cout << CYAN << "Before sorting with " << container_name << ": " << COLOR_RESET;
+template <typename T>
+void print_before_sort(const T& container, const std::string& container_name) {
+	std::cout << C << "Before sorting with " << container_name << ": " << D;
 	print_container(container);
 	std::cout << std::endl;
 }
 
-// Function to print after sorting
-template <typename Container>
-void print_after_sort(const Container& container, const std::string& container_name, double time_taken_ms) {
-	std::cout << GREEN << "After sorting with " << container_name << ": " << COLOR_RESET;
+template <typename T>
+void print_after_sort(const T& container, const std::string& container_name, double time_taken_ms) {
+	std::cout << G << "After sorting with " << container_name << ": " << D;
 	print_container(container);
 	std::cout << std::endl;
-	std::cout << YELLOW << "Time to process a range of " << container.size()
-			  << " elements with " << container_name << ": "
-			  << BRIGHT_YELLOW << time_taken_ms << " ms" << COLOR_RESET << std::endl;
+	std::cout << Y << "Time to process a range of " << D << container.size()
+			<< Y << " elements with " << container_name << ": "
+			<< D << time_taken_ms << " ms"  << std::endl;
+}
+
+template <typename T>
+double ford_johnson_sort(const T& container) {
+	size_t n;
+	std::chrono::steady_clock::time_point start_time = std::chrono::high_resolution_clock::now();
+	n = container.size();
+	std::cout << n << std::endl;
+	std::chrono::steady_clock::time_point end_time = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::micro> elapsed = end_time - start_time;
+	return elapsed.count();
 }
 
 class PmergeMe {
@@ -77,13 +71,9 @@ class PmergeMe {
 		int						walker;
 		int						is_numeric(char *arg);
 		int						is_decimal(char c);
-		void					reset(void);
 		int						throw_error(std::string message);
-		int						success(double result);
 		void					fill_queue(char *arg);
 		void					fill_vector(char *arg);
-		void					print_queue(void);
-		void					print_vector(void);
 
 	public:
 								PmergeMe();
