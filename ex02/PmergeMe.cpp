@@ -39,31 +39,14 @@ int PmergeMe::is_decimal(char c) {
 	return (c == '.');
 }
 
-int PmergeMe::is_pmmchar(char c) {
-	return (std::isdigit(c, std::locale()) || c == ' ' || c == '/' || c == '+' || c == '*' || c == '-');
-}
-
-void PmergeMe::pmm_filter(char val) {
-	if (!is_pmmchar(val))
-	{
-		error = 1;
-		error_message = "non allowed char " + std::string(1, val) + " occured";
-		return;
-	}
-	if (val == ' ') {
-		return;
-	}
-	return;
-}
-
 int PmergeMe::success(double result) {
-	std::cout << "\x1b[32m" << result << "\033[0m" << std::endl;
+	std::cout << G << result << D << std::endl;
 	reset();
 	return 1;
 }
 
 int PmergeMe::throw_error(std::string message) {
-	std::cout << "\x1b[31mError\033[0m: " << message << std::endl;
+	std::cout << RED << "Error" << D <<": " << message << std::endl;
 	return 1;
 }
 
@@ -87,6 +70,32 @@ void PmergeMe::fill_vector(char *arg) {
 	pmerge_me_vector.push_back(num);
 }
 
+void PmergeMe::print_queue(void) {
+	std::stringstream ss;
+	std::queue<int> temp = pmerge_me_queue;
+	size_t length = pmerge_me_queue.size();
+
+	while (!temp.empty())
+	{
+		ss << temp.front() << " ";
+		temp.pop();
+	}
+	std::cout << Y << "  Queue(" << length << "):  " << D << ss.str() << std::endl;
+}
+
+void PmergeMe::print_vector(void) {
+	std::stringstream ss;
+	std::vector<int>::iterator	it;
+	size_t length = pmerge_me_vector.size();
+	it = pmerge_me_vector.begin();
+	while (it != pmerge_me_vector.end())
+	{
+		ss << *it << " ";
+		it++;
+	}
+	std::cout << Y << "  Vector(" << length << "): " << D << ss.str() << std::endl;
+}
+
 int PmergeMe::run(int argc, char *argv[]) {
 	if (argc == 1)
 		return throw_error("usage is ./PmergeMe [n numeric unsigned arguments]");
@@ -94,12 +103,15 @@ int PmergeMe::run(int argc, char *argv[]) {
 	while (walker < argc)
 	{
 		if (!is_numeric(argv[walker]))
-			return throw_error(std::string("each argument must be numeric unsigned and ") + argv[walker] + " is not");
+			return throw_error(std::string("each argument must be numeric unsigned and \"") + argv[walker] + "\" is not");
 		fill_queue(argv[walker]);
 		fill_vector(argv[walker]);
 		walker++;
 	}
-	if (walker <= 1)
-		return throw_error("empty seeds cannot be processed");
+	double time_taken = 0;
+	print_before_sort(pmerge_me_queue, "std::queue<int>");
+	print_before_sort(pmerge_me_vector, "std::vector<int>");
+	print_after_sort(pmerge_me_queue, "std::queue<int>", time_taken);
+	print_after_sort(pmerge_me_vector, "std::vector<int>", time_taken);
 	return success(42);
 }
