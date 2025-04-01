@@ -1,5 +1,12 @@
 #include "./PmergeMe.hpp"
 
+double processeing_time(std::chrono::steady_clock::time_point start)
+{
+	std::chrono::steady_clock::time_point end_time = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::micro> elapsed = end_time - start;
+	return elapsed.count();
+}
+
 PmergeMe::PmergeMe() : error(0), error_message(""), walker(0) {}
 
 PmergeMe::PmergeMe(const PmergeMe& src) :
