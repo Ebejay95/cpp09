@@ -18,7 +18,34 @@
 	# define D "\033[0m"
 	# define RED "\x1b[31m"
 
-	// struct with numeber index (inital) and index(processed (in process))
+	typedef struct Node {
+		int value
+		int init_dex
+		int currdex
+	}
+
+	/*
+	typedef struct {
+		int value
+		int init_dex
+		int curdex
+	}
+
+	create_elements()
+		1. combine into elements
+		2. sort each element (on last identifier)
+		3. if (number of elements == 2 && not sorted)
+			sort once more
+		4 . Done
+
+	merge_elements()
+		1. divide into sub elements
+		2. create a and b stack
+		3. sorted stack  = b(1) + a(n)
+		4. detect fitting jnum (smallest possitble fitting in length of s)
+		5. look back (from end or jnum)
+		6. resolve in binary place search
+	*/
 
 	template <typename T>
 	void print_container(const T& container) {
@@ -56,13 +83,11 @@
 	double processeing_time(std::chrono::steady_clock::time_point start);
 
 
-
 	template <typename T>
 	double ford_johnson_sort(const T& container) {
 		std::chrono::steady_clock::time_point start;
 		typedef typename T::value_type value_type;
 		size_t n;
-		T pairs;
 		value_type leftover;
 		bool has_leftover;
 
@@ -71,15 +96,14 @@
 
 		if (n <= 1)
 			return processeing_time(start);
-
-		leftover = value_type();
-		has_leftover = false;
+		if (n % 2 != 0)
+			has_leftover = true;
 
 		T temp(container);
+		T el_temp;
 
-		pairs = create_pairs(tmp);
-
-		std::cout << n << std::endl;
+		el_temp = create_elements(tmp);
+		container = merge_elements(el_temp);
 
 		return processeing_time(start);
 	}
