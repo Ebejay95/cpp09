@@ -33,7 +33,7 @@ NAME=PmergeMe
 #------------------------------------------------------------------------------#
 
 CC=c++
-CFLAGS=-Wall -Wextra -Werror -Wshadow -std=c++98
+CFLAGS=-Wall -Wextra -Werror -Wshadow -std=c++11
 LDFLAGS=
 
 ifeq ($(DEBUG), 1)
