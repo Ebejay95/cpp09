@@ -17,6 +17,37 @@
 # define W "\033[0;97m"
 # define D "\033[0m"
 # define RED "\x1b[31m"
+#define BGB_RED     "\033[101m"
+#define BGB_G "\033[102m"
+#define BGB_Y "\033[103m"
+#define BGB_B "\033[104m"
+#define BGB_M "\033[105m"
+#define BGB_C "\033[106m"
+#define BGB_W "\033[107m"
+#define BG_RED     "\033[41m"
+#define BG_G "\033[42m"
+#define BG_Y "\033[43m"
+#define BG_B "\033[44m"
+#define BG_M "\033[45m"
+#define BG_C "\033[46m"
+#define BG_W "\033[47m"
+#define BG_D "\033[49m"
+
+template <typename T>
+T generate_jacobsthal(const T& jacobsthal, size_t n) {
+	T result = jacobsthal; // Create a local copy
+
+	if (n < 1)
+		return result;
+	result.push_back(0);
+	if (n < 2)
+		return result;
+	result.push_back(1);
+	for (size_t i = 2; i < n; ++i) {
+		result.push_back(result[i-1] + 2 * result[i-2]);
+	}
+	return result;
+}
 
 template <typename T>
 void print_container(const T& container) {
@@ -167,6 +198,13 @@ void fill_mergables(T& container, T& a, T& b, T& m, T& s, size_t& el_size) {
 		leftover_repair(leftover, m, has_leftover, count_leftover);
 	else if (m.size() == 0)
 		leftover_repair(leftover, s, has_leftover, count_leftover);
+
+	t = 20;
+	T jjj;
+	jjj = generate_jacobsthal(jjj, s.size());
+	std::cout << BG_C << "jjj: ";
+	print_container(jjj);
+	std::cout << D << "\n";
 
 	std::cout << B << "s: ";
 	print_container(s);
