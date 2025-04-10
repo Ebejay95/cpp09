@@ -65,9 +65,33 @@ void PmergeMe::fill_vector(char *arg) {
 	pmerge_me_vector.push_back(num);
 }
 
-void PmergeMe::sort_elements(std::vector<int>& container, size_t el_size) {
-	std::cout << G << "sort_elements" << D << std::endl;
+void PmergeMe::swap_elements(std::vector<int>& container, size_t el_size, size_t prev_size, size_t i) {
+	size_t last_first_half = i + prev_size - 1;
+	size_t last_second_half = std::min(i + el_size - 1, container.size() - 1);
+	if (container[last_first_half] > container[last_second_half]) {
+		size_t second_half_size = std::min(prev_size, container.size() - (i + prev_size));
+		for (size_t j = 0; j < second_half_size; j++) {
+			std::swap(container[i + j], container[i + prev_size + j]);
+		}
+	}
+}
 
+void PmergeMe::sort_in_elements(std::vector<int>& container, size_t el_size) {
+	if (el_size == 2) {
+		for (size_t i = 0; i < container.size(); i += 2) {
+			if (i + 1 < container.size() && container[i] > container[i+1]) {
+				std::swap(container[i], container[i+1]);
+			}
+		}
+	}
+	else {
+		size_t prev_size = el_size / 2;
+		for (size_t i = 0; i < container.size(); i += el_size) {
+			if (i + prev_size < container.size()) {
+				swap_elements(container, el_size, prev_size, i);
+			}
+		}
+	}
 	for (size_t i = 0; i < container.size(); i += el_size) {
 		for (size_t j = i; j < i + el_size && j < container.size(); j++) {
 			std::cout << Y << container[j] << " " << D;
@@ -116,7 +140,7 @@ void PmergeMe::create_elements(std::vector<int>& container, size_t& el_size) {
 	std::cout << ": ";
 	print_container_ln(leftover);
 
-	sort_elements(container, el_size);
+	sort_in_elements(container, el_size);
 
 	leftover_repair(leftover, container, has_leftover, count_leftover);
 	print_container_ln(container);
@@ -166,3 +190,12 @@ int PmergeMe::run(int argc, char *argv[]) {
 	print_after_sort(pmerge_me_vector, "std::vector<int>", time_vector);
 	return 0;
 }
+
+/*
+12 9 0 5 17 1 3 16 7 4 43 8 64 2 34 6 45 90 11
+(12 9) (0 5) (17 1) (3 16) (7 4) (43 8) (64 2) (34 6) (45 90) 11
+(9 12) (0 5) (1 17) (3 16) (4 7) (8 43) (2 64) (6 34) (45 90) 11
+(9 12) (0 5) (1 17) (3 16) (4 7) (8 43) (2 64) (6 34) (45 90) 11
+((9 12) (0 5)) ((1 17) (3 16)) ((4 7) (8 43)) ((2 64) (6 34)) (45 90) 11
+((0 5) (9 12)) ((3 16) (1 17)) ((4 7) (8 43)) ((6 34) (2 64)) (45 90) 11
+*/

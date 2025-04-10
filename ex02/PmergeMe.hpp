@@ -87,7 +87,8 @@ class PmergeMe {
 
 		void leftover_extract(std::vector<int>& leftover, std::vector<int>& container, bool has_leftover, int count_leftover);
 		void leftover_repair(std::vector<int>& leftover, std::vector<int>& container, bool has_leftover, int count_leftover);
-		void sort_elements(std::vector<int>& container, size_t pair_size);
+		void swap_elements(std::vector<int>& container, size_t el_size, size_t prev_size, size_t i);
+		void sort_in_elements(std::vector<int>& container, size_t pair_size);
 		void create_elements(std::vector<int>& container, size_t& el_size);
 		double ford_johnson_sort(std::vector<int>& container);
 		double ford_johnson_sort(std::queue<int>& container);
