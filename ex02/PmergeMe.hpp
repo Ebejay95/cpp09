@@ -121,14 +121,70 @@ void create_elements(T& container, size_t& el_size) {
 }
 
 template <typename T>
+void container_copy(T& src, T& target, size_t& el_size, size_t& i) {
+	for (size_t j = i; j < (i + el_size); j++) {
+		target.push_back(src[j]);
+	}
+}
+
+template <typename T>
+void fill_mergables(T& container, T& a, T& b, T& m, T& s, size_t& el_size) {
+
+	bool has_leftover = (container.size() % el_size != 0);
+	int count_leftover = container.size() % el_size;
+	T leftover;
+
+	leftover_extract(leftover, container, has_leftover, count_leftover);
+
+	for (size_t i = 0; i < container.size(); i += el_size) {
+		if (i % 2 == 0 && i != 0) {
+			container_copy(container, a, el_size, i);
+		} else {
+			container_copy(container, b, el_size, i);
+		}
+	}
+
+	std::cout << C << "a: ";
+	print_container(a);
+	std::cout << D << "\n";
+	std::cout << M << "b: ";
+	print_container(b);
+	std::cout << D << "\n";
+	std::cout << "l: ";
+	print_container(leftover);
+	std::cout << D << "\n";
+
+	size_t t = 0;
+	container_copy(b, s, el_size, t);
+	for (size_t i = el_size; i < b.size(); i += el_size) {
+		container_copy(b, m, el_size, i);
+	}
+	for (size_t i = 0; i < a.size(); i += el_size) {
+		container_copy(a, s, el_size, i);
+	}
+
+	if (m.size() != 0)
+		leftover_repair(leftover, m, has_leftover, count_leftover);
+	else if (m.size() == 0)
+		leftover_repair(leftover, s, has_leftover, count_leftover);
+
+	std::cout << B << "s: ";
+	print_container(s);
+	std::cout << D << "\n";
+	std::cout << RED << "m: ";
+	print_container(m);
+	std::cout << D << "\n";
+}
+
+template <typename T>
 void merge_elements(T& container, size_t& el_size) {
 	std::cout << G << "merge_elements " << el_size << D << std::endl;
 	print_container(container);
 	std::cout << "\n";
 
-	// T a;
-	// T b;
-	// el_size /= 2;
+	T a, b, m, s;
+	el_size /= 2;
+	fill_mergables(container, a, b, m, s, el_size);
 }
 
 template <typename T>
@@ -142,6 +198,8 @@ double ford_johnson_sort(T& container) {
 		return processeing_time(start);
 
 	create_elements(container, el_size);
+
+	el_size /= 2;
 
 	merge_elements(container, el_size);
 
