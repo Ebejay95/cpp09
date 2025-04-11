@@ -34,7 +34,7 @@
 #define BG_D "\033[49m"
 
 template <typename T>
-T generate_jacobsthal(size_t n) {
+T generate_jacobsthal(int n) {
 	T result;
 
 	if (n < 1)
@@ -43,34 +43,25 @@ T generate_jacobsthal(size_t n) {
 	if (n < 2)
 		return result;
 	result.push_back(5);
-	for (size_t i = 2; i < n; ++i) {
+	for (int i = 2; i < n; ++i) {
 		result.push_back(result[i-1] + 2 * result[i-2]);
+		if (result[i-1] + 2 * result[i-2] > n)
+			break;
 	}
 	return result;
 }
 
 template <typename T>
-void binary_insert(T& container, const typename T::value_type& value, size_t start, size_t end) {
-	size_t left = start;
-	size_t right = end;
-
-	while (left < right) {
-		size_t mid = left + (right - left) / 2;
-		if (container[mid] < value) {
-			left = mid + 1;
-		} else {
-			right = mid;
-		}
-	}
-
-	container.insert(container.begin() + left, value);
-}
-
-template <typename T>
-void print_container(const T& container) {
+void print_container(const T& container, size_t grouper = 0) {
 	typename T::const_iterator it;
+	size_t comparer = 0;
 	for (it = container.begin(); it != container.end(); ++it) {
+		if (grouper != 0 && comparer % grouper == 0)
+			std::cout << "| ";
+		else if (grouper != 0 && comparer % (grouper / 2) == 0)
+			std::cout << ": ";
 		std::cout << *it << " ";
+		comparer++;
 	}
 }
 
@@ -88,7 +79,7 @@ void print_after_sort(const T& container, const std::string& container_name, dou
 	std::cout << std::endl;
 	std::cout << Y << "Time to process a range of " << D << container.size()
 			<< Y << " elements with " << container_name << ": "
-			<< D << time_taken_ms << " ms" << std::endl;
+			<< D << time_taken_ms << " microseconds" << std::endl;
 }
 
 double processeing_time(std::chrono::steady_clock::time_point start);
@@ -128,8 +119,11 @@ void sort_in_elements(T& container, size_t el_size) {
 template <typename T>
 void leftover_extract(T& leftover, T& container, bool has_leftover, int count_leftover) {
 	if (has_leftover) {
+		auto start_pos = container.size() - count_leftover;
+		for (int i = 0; i < count_leftover; i++) {
+			leftover.push_back(container[start_pos + i]);
+		}
 		while (count_leftover) {
-			leftover.push_back(container.back());
 			container.pop_back();
 			count_leftover--;
 		}
@@ -137,19 +131,84 @@ void leftover_extract(T& leftover, T& container, bool has_leftover, int count_le
 }
 
 template <typename T>
-void leftover_repair(T& leftover, T& container, bool has_leftover, int count_leftover) {
-
+void leftover_repair(T& leftover, T& container, bool has_leftover) {
 	if (has_leftover) {
-		while (count_leftover) {
-			container.push_back(leftover.back());
-			leftover.pop_back();
-			count_leftover--;
+		for (size_t i = 0; i < leftover.size(); i++) {
+			container.push_back(leftover[i]);
 		}
+		leftover.clear();
+	}
+}
+
+template <typename T>
+void odd_leftover_insert(T& container, T& leftover, size_t& el_size) {
+	size_t local_size = el_size / 2;
+	if (local_size < 1)
+		local_size = 1;
+
+	//std::cout << BG_RED << "odd_leftover_insert " << local_size << "\n";
+	//print_container(container);
+	//std::cout << "\n";
+	//print_container(leftover);
+	//std::cout << D << std::endl;
+
+	// If leftover is empty, nothing to do
+	if (leftover.empty())
+		return;
+
+	// Process leftover elements in pairs of size local_size
+	while (leftover.size() >= local_size) {
+		// Take a pair (chunk) of size local_size from leftover
+		auto chunk_begin = leftover.begin();
+		auto chunk_end = chunk_begin + local_size;
+
+		// Extract the value to compare (the last element in the chunk)
+		auto compare_value = *(chunk_begin + local_size - 1);
+
+		// Binary search to find insertion point
+		size_t left = 0;
+		size_t right = container.size() / local_size;
+
+		if (right == 0) {
+			// If container is empty or doesn't have complete groups, just insert at beginning
+			container.insert(container.begin(), chunk_begin, chunk_end);
+			leftover.erase(chunk_begin, chunk_end);
+			continue;
+		}
+
+		while (left < right) {
+			size_t mid = left + (right - left) / 2;
+			size_t mid_pos = mid * local_size;
+
+			// Compare the last value of current container chunk
+			if (mid_pos + local_size - 1 < container.size()) {
+				auto container_compare_value = container[mid_pos + local_size - 1];
+
+				if (container_compare_value < compare_value) {
+					left = mid + 1;
+				} else {
+					right = mid;
+				}
+			} else {
+				right = mid;
+			}
+		}
+
+		size_t insert_pos = left * local_size;
+
+		// Insert the chunk at insert_pos
+		container.insert(container.begin() + insert_pos, chunk_begin, chunk_end);
+
+		// Remove inserted elements from leftover
+		leftover.erase(chunk_begin, chunk_end);
 	}
 }
 
 template <typename T>
 void create_elements(T& container, size_t& el_size) {
+	//std::cout << G << el_size << " create_elements: ";
+	//print_container(container, el_size);
+	//std::cout << D << "\n";
 	if (container.size() <= 1) {
 		return;
 	}
@@ -160,7 +219,17 @@ void create_elements(T& container, size_t& el_size) {
 
 	leftover_extract(leftover, container, has_leftover, count_leftover);
 	sort_in_elements(container, el_size);
-	leftover_repair(leftover, container, has_leftover, count_leftover);
+
+	if (leftover.size() > (el_size / 2)) {
+		odd_leftover_insert(container, leftover, el_size);
+		leftover_repair(leftover, container, has_leftover);
+	} else {
+		leftover_repair(leftover, container, has_leftover);
+	}
+
+	//std::cout << Y << el_size << " create_elements: ";
+	//print_container(container, el_size);
+	//std::cout << D << "\n";
 
 	el_size *= 2;
 
@@ -176,9 +245,49 @@ void container_copy(T& src, T& target, size_t& el_size, size_t& i) {
 }
 
 template <typename T>
+void binary_search_insert_group(T& container, const T& group_to_insert, size_t el_size) {
+	if (container.empty()) {
+		for (size_t i = 0; i < group_to_insert.size(); i++) {
+			container.push_back(group_to_insert[i]);
+		}
+		return;
+	}
+	//std::cout << "group to insert: ";
+	//print_container(group_to_insert, el_size);
+	//std::cout << "\n";
+	size_t container_groups = container.size() / el_size;
+	size_t insert_group_idx = 0;
+	bool found = false;
+
+	for (size_t i = 0; i < container_groups && !found; i++) {
+		size_t current_group_last_idx = (i + 1) * el_size - 1;
+		if (current_group_last_idx < container.size()) {
+			size_t insert_group_last_idx = group_to_insert.size() - 1;
+			if (container[current_group_last_idx] > group_to_insert[insert_group_last_idx]) {
+				insert_group_idx = i;
+				found = true;
+			}
+		}
+	}
+
+	if (!found) {
+		insert_group_idx = container_groups;
+	}
+
+	size_t insert_pos = insert_group_idx * el_size;
+
+	for (size_t i = 0; i < group_to_insert.size(); i++) {
+		container.insert(container.begin() + insert_pos + i, group_to_insert[i]);
+	}
+	//std::cout << "container after insert: ";
+	//print_container(container, el_size);
+	//std::cout << "\n";
+}
+
+
+template <typename T>
 void fill_mergables(T& container, T& a, T& b, T& s, T& m, size_t& el_size) {
 	size_t group_count = container.size() / el_size;
-
 	for (size_t pair_idx = 0; pair_idx < group_count; pair_idx++) {
 		size_t start_pos = pair_idx * el_size;
 		if (pair_idx % 2 == 0) {
@@ -212,8 +321,9 @@ void fill_mergables(T& container, T& a, T& b, T& s, T& m, size_t& el_size) {
 
 template <typename T>
 void merge_elements(T& container, size_t& el_size) {
-	print_container(container);
-	std::cout << "\n";
+	//std::cout << el_size << "container: ";
+	//print_container(container, el_size);
+	//std::cout << D << "\n";
 	if (container.size() <= 1 || el_size == 0) {
 		return;
 	}
@@ -224,68 +334,57 @@ void merge_elements(T& container, size_t& el_size) {
 	int count_leftover = container.size() % el_size;
 	T leftover;
 
-	if (has_leftover) {
-		for (int i = 0; i < count_leftover; i++) {
-			leftover.push_back(container.back());
-			container.pop_back();
-		}
-	}
+	leftover_extract(leftover, container, has_leftover, count_leftover);
 
 	fill_mergables(container, a, b, s, m, el_size);
-
-	if (has_leftover) {
-		for (int i = count_leftover - 1; i >= 0; i--) {
-			if (!m.empty()) {
-				m.push_back(leftover[i]);
-			} else {
-				s.push_back(leftover[i]);
-			}
-		}
-	}
-	std::cout << G << "\n\nbefore merging" << D << std::endl;
-	std::cout << el_size << "a: " << B;
-	print_container(a);
-	std::cout << D << "\n";
-	std::cout << el_size << "b: " << M;
-	print_container(b);
-	std::cout << D << "\n";
-	std::cout << el_size << "s: " << C;
-	print_container(s);
-	std::cout << D << "\n";
-	std::cout << el_size << "m: " << BG_B;
-	print_container(m);
-	std::cout << D << "\n";
 
 	T jacobsthal;
 	jacobsthal = generate_jacobsthal<T>(static_cast<size_t>(s.size() / el_size));
 
-	std::cout << el_size << "j: " << BG_M;
-	print_container(jacobsthal);
-	std::cout << D << "\n\n";
+	//std::cout << el_size << "a: ";
+	//print_container(a, el_size);
+	//std::cout << D << "\n";
+	//std::cout << el_size << "b: ";
+	//print_container(b, el_size);
+	//std::cout << D << "\n";
+	//std::cout << el_size << "s: ";
+	//print_container(s, el_size);
+	//std::cout << D << "\n";
+	//std::cout << el_size << "m: ";
+	//print_container(m, el_size);
+	//std::cout << D << "\n";
+	//std::cout << el_size << "l: ";
+	//print_container(leftover, el_size);
+	//std::cout << D << "\n";
 	container.clear();
 
 	for (size_t i = 0; i < s.size(); i++) {
 		container.push_back(s[i]);
 	}
 
-	std::cout << BG_RED;
-	print_container(container);
-	std::cout << D << "\n";
-
 	for (size_t j = 0; j < jacobsthal.size(); j++) {
-		std::cout << G << j << ": " << D << "\n";
 		int lower_j = 0;
 		if (j > 0)
 			lower_j = jacobsthal[j - 1];
-		for (int si = jacobsthal[j]; si >= lower_j; si--) {
-			std::cout <<" " << si <<" perform binary search in m (retreive ony groups of el_size that fit\n";
+
+		for (int si = jacobsthal[j]; si > lower_j; si--) {
+			if (si <= static_cast<int>(m.size() / el_size)) {
+
+				size_t group_idx = si - 1;
+				T current_group;
+
+				for (size_t k = 0; k < el_size && (group_idx * el_size + k) < m.size(); k++) {
+					current_group.push_back(m[group_idx * el_size + k]);
+				}
+
+				if (!current_group.empty()) {
+					binary_search_insert_group(container, current_group, el_size);
+				}
+			}
 		}
-		std::cout << "\n";
 	}
 
-	std::cout << BG_G;
-	print_container(container);
-	std::cout << D << "\n";
+	leftover_repair(leftover, container, has_leftover);
 
 	if (el_size > 1) {
 		el_size /= 2;
@@ -335,3 +434,5 @@ class PmergeMe {
 };
 
 #endif
+
+///7 2 7 10 7 6 4 5 10 6 6 5 3 3 3 3 7 8 5 4 1 8 3 6 4 2 10
