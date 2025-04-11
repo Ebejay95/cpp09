@@ -34,19 +34,36 @@
 #define BG_D "\033[49m"
 
 template <typename T>
-T generate_jacobsthal(const T& jacobsthal, size_t n) {
-	T result = jacobsthal; // Create a local copy
+T generate_jacobsthal(size_t n) {
+	T result;
 
 	if (n < 1)
 		return result;
-	result.push_back(0);
+	result.push_back(3);
 	if (n < 2)
 		return result;
-	result.push_back(1);
+	result.push_back(5);
 	for (size_t i = 2; i < n; ++i) {
 		result.push_back(result[i-1] + 2 * result[i-2]);
 	}
 	return result;
+}
+
+template <typename T>
+void binary_insert(T& container, const typename T::value_type& value, size_t start, size_t end) {
+	size_t left = start;
+	size_t right = end;
+
+	while (left < right) {
+		size_t mid = left + (right - left) / 2;
+		if (container[mid] < value) {
+			left = mid + 1;
+		} else {
+			right = mid;
+		}
+	}
+
+	container.insert(container.begin() + left, value);
 }
 
 template <typename T>
@@ -147,7 +164,7 @@ void create_elements(T& container, size_t& el_size) {
 
 	el_size *= 2;
 
-	if ((el_size * 2) < container.size())
+	if (el_size < container.size())
 		create_elements(container, el_size);
 }
 
@@ -159,70 +176,121 @@ void container_copy(T& src, T& target, size_t& el_size, size_t& i) {
 }
 
 template <typename T>
-void fill_mergables(T& container, T& a, T& b, T& m, T& s, size_t& el_size) {
+void fill_mergables(T& container, T& a, T& b, T& s, T& m, size_t& el_size) {
+	size_t group_count = container.size() / el_size;
+
+	for (size_t pair_idx = 0; pair_idx < group_count; pair_idx++) {
+		size_t start_pos = pair_idx * el_size;
+		if (pair_idx % 2 == 0) {
+			for (size_t i = 0; i < el_size && (start_pos + i) < container.size(); i++) {
+				b.push_back(container[start_pos + i]);
+			}
+		} else {
+			for (size_t i = 0; i < el_size && (start_pos + i) < container.size(); i++) {
+				a.push_back(container[start_pos + i]);
+			}
+		}
+	}
+
+	s.clear();
+	m.clear();
+
+	if (!b.empty()) {
+		for (size_t i = 0; i < el_size && i < b.size(); i++) {
+			s.push_back(b[i]);
+		}
+	}
+
+	for (size_t i = 0; i < a.size(); i++) {
+		s.push_back(a[i]);
+	}
+
+	for (size_t i = el_size; i < b.size(); i++) {
+		m.push_back(b[i]);
+	}
+}
+
+template <typename T>
+void merge_elements(T& container, size_t& el_size) {
+	print_container(container);
+	std::cout << "\n";
+	if (container.size() <= 1 || el_size == 0) {
+		return;
+	}
+
+	T a, b, m, s;
 
 	bool has_leftover = (container.size() % el_size != 0);
 	int count_leftover = container.size() % el_size;
 	T leftover;
 
-	leftover_extract(leftover, container, has_leftover, count_leftover);
-
-	for (size_t i = 0; i < container.size(); i += el_size) {
-		if (i % 2 == 0 && i != 0) {
-			container_copy(container, a, el_size, i);
-		} else {
-			container_copy(container, b, el_size, i);
+	if (has_leftover) {
+		for (int i = 0; i < count_leftover; i++) {
+			leftover.push_back(container.back());
+			container.pop_back();
 		}
 	}
 
-	std::cout << C << "a: ";
+	fill_mergables(container, a, b, s, m, el_size);
+
+	if (has_leftover) {
+		for (int i = count_leftover - 1; i >= 0; i--) {
+			if (!m.empty()) {
+				m.push_back(leftover[i]);
+			} else {
+				s.push_back(leftover[i]);
+			}
+		}
+	}
+	std::cout << G << "\n\nbefore merging" << D << std::endl;
+	std::cout << el_size << "a: " << B;
 	print_container(a);
 	std::cout << D << "\n";
-	std::cout << M << "b: ";
+	std::cout << el_size << "b: " << M;
 	print_container(b);
 	std::cout << D << "\n";
-	std::cout << "l: ";
-	print_container(leftover);
-	std::cout << D << "\n";
-
-	size_t t = 0;
-	container_copy(b, s, el_size, t);
-	for (size_t i = el_size; i < b.size(); i += el_size) {
-		container_copy(b, m, el_size, i);
-	}
-	for (size_t i = 0; i < a.size(); i += el_size) {
-		container_copy(a, s, el_size, i);
-	}
-
-	if (m.size() != 0)
-		leftover_repair(leftover, m, has_leftover, count_leftover);
-	else if (m.size() == 0)
-		leftover_repair(leftover, s, has_leftover, count_leftover);
-
-	t = 20;
-	T jjj;
-	jjj = generate_jacobsthal(jjj, s.size());
-	std::cout << BG_C << "jjj: ";
-	print_container(jjj);
-	std::cout << D << "\n";
-
-	std::cout << B << "s: ";
+	std::cout << el_size << "s: " << C;
 	print_container(s);
 	std::cout << D << "\n";
-	std::cout << RED << "m: ";
+	std::cout << el_size << "m: " << BG_B;
 	print_container(m);
 	std::cout << D << "\n";
-}
 
-template <typename T>
-void merge_elements(T& container, size_t& el_size) {
-	std::cout << G << "merge_elements " << el_size << D << std::endl;
+	T jacobsthal;
+	jacobsthal = generate_jacobsthal<T>(static_cast<size_t>(s.size() / el_size));
+
+	std::cout << el_size << "j: " << BG_M;
+	print_container(jacobsthal);
+	std::cout << D << "\n\n";
+	container.clear();
+
+	for (size_t i = 0; i < s.size(); i++) {
+		container.push_back(s[i]);
+	}
+
+	std::cout << BG_RED;
 	print_container(container);
-	std::cout << "\n";
+	std::cout << D << "\n";
 
-	T a, b, m, s;
-	el_size /= 2;
-	fill_mergables(container, a, b, m, s, el_size);
+	for (size_t j = 0; j < jacobsthal.size(); j++) {
+		std::cout << G << j << ": " << D << "\n";
+		int lower_j = 0;
+		if (j > 0)
+			lower_j = jacobsthal[j - 1];
+		for (int si = jacobsthal[j]; si >= lower_j; si--) {
+			std::cout <<" " << si <<" perform binary search in m (retreive ony groups of el_size that fit\n";
+		}
+		std::cout << "\n";
+	}
+
+	std::cout << BG_G;
+	print_container(container);
+	std::cout << D << "\n";
+
+	if (el_size > 1) {
+		el_size /= 2;
+		merge_elements(container, el_size);
+	}
 }
 
 template <typename T>
@@ -235,10 +303,11 @@ double ford_johnson_sort(T& container) {
 	if (container.size() <= 1)
 		return processeing_time(start);
 
+
 	create_elements(container, el_size);
-
-	el_size /= 2;
-
+	el_size /= 8;
+	if (el_size < 1)
+		el_size = 1;
 	merge_elements(container, el_size);
 
 	return processeing_time(start);
