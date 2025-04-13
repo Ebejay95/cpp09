@@ -1,10 +1,64 @@
 #include "./PmergeMe.hpp"
 
-double processeing_time(std::chrono::steady_clock::time_point start)
-{
-	std::chrono::steady_clock::time_point end_time = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double, std::micro> elapsed = end_time - start;
-	return elapsed.count();
+#include "./PmergeMe.hpp"
+
+PmergeMeItem::PmergeMeItem() : value(0), index(0) {}
+
+PmergeMeItem::PmergeMeItem(int v, int i) : value(v), index(i) {}
+
+PmergeMeItem::PmergeMeItem(const PmergeMeItem& other) : value(other.value), index(other.index) {}
+
+PmergeMeItem& PmergeMeItem::operator=(const PmergeMeItem& other) {
+    if (this != &other) {
+        value = other.value;
+        index = other.index;
+    }
+    return *this;
+}
+
+int PmergeMeItem::getValue() const {
+    return value;
+}
+
+int PmergeMeItem::getIndex() const {
+    return index;
+}
+
+void PmergeMeItem::setValue(int v) {
+    value = v;
+}
+
+void PmergeMeItem::setIndex(int i) {
+    index = i;
+}
+
+bool PmergeMeItem::operator<(const PmergeMeItem& other) {
+    return value < other.value;
+}
+
+bool PmergeMeItem::operator>(const PmergeMeItem& other) {
+    return value > other.value;
+}
+
+bool PmergeMeItem::operator==(const PmergeMeItem& other) {
+    return value == other.value;
+}
+
+bool PmergeMeItem::operator!=(const PmergeMeItem& other) {
+    return value != other.value;
+}
+
+bool PmergeMeItem::operator<=(const PmergeMeItem& other) {
+    return value <= other.value;
+}
+
+bool PmergeMeItem::operator>=(const PmergeMeItem& other) {
+    return value >= other.value;
+}
+
+std::ostream& operator<<(std::ostream& os, const PmergeMeItem& item) {
+    os << item.getValue();
+    return os;
 }
 
 PmergeMe::PmergeMe() : error(0), error_message(""), walker(0) {}
@@ -80,27 +134,3 @@ int PmergeMe::run(int argc, char *argv[]) {
 	print_after_sort(pmerge_me_vector, "std::vector<int>", time_vector);
 	return 0;
 }
-
-/*
-create elements
-12 9 0 5 17 1 3 16 7 4 43 8 64 2 34 6 45 90 11
-(12 9) (0 5) (17 1) (3 16) (7 4) (43 8) (64 2) (34 6) (45 90) 11
-(9 12) (0 5) (1 17) (3 16) (4 7) (8 43) (2 64) (6 34) (45 90) 11
-(9 12) (0 5) (1 17) (3 16) (4 7) (8 43) (2 64) (6 34) (45 90) 11
-((9 12) (0 5)) ((1 17) (3 16)) ((4 7) (8 43)) ((2 64) (6 34)) (45 90) 11
-((0 5) (9 12)) ((3 16) (1 17)) ((4 7) (8 43)) ((6 34) (2 64)) (45 90) 11
-(((0 5) (9 12)) ((3 16) (1 17))) (((4 7) (8 43)) ((6 34) (2 64))) (45 90) 11
-
-merge elements
-((0 5) (9 12)) ((3 16) (1 17)) ((4 7) (8 43)) ((6 34) (2 64)) (45 90) 11
-
-
-
-
-
-9 5 4 1 2 6 8 7 3
-(9 5) (4 1) (2 6) (8 7) 3
-(5 9) (1 4) (2 6) (7 8) 3
-((5 9) (1 4)) ((2 6) (7 8)) 3
-((1 4) (5 9)) ((2 6) (7 8)) 3
-*/
