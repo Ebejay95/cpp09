@@ -84,38 +84,10 @@ double ford_johnson_sort(T& container) {
 	return elapsed.count();
 }
 
-
-
-class PmergeMeItem {
-    private:
-        int value;
-        int index;
-
-    public:
-        PmergeMeItem();
-        PmergeMeItem(int v, int i = 0);  // Note the default parameter here
-        PmergeMeItem(const PmergeMeItem& other);
-
-        PmergeMeItem& operator=(const PmergeMeItem& other);
-        int getValue() const;
-        int getIndex() const;
-        void setValue(int v);
-        void setIndex(int i);
-
-        bool operator<(const PmergeMeItem& other);
-        bool operator>(const PmergeMeItem& other);
-        bool operator==(const PmergeMeItem& other);
-        bool operator!=(const PmergeMeItem& other);
-        bool operator<=(const PmergeMeItem& other);
-        bool operator>=(const PmergeMeItem& other);
-};
-
-inline std::ostream& operator<<(std::ostream& os, const PmergeMeItem& item);
-
 class PmergeMe {
 	private:
-		std::vector<PmergeMeItem>	pmerge_me_vector;
-		std::deque<PmergeMeItem> 	pmerge_me_deque;
+		std::vector<int>			pmerge_me_vector;
+		std::deque<int> 			pmerge_me_deque;
 		int							error;
 		std::string					error_message;
 		int							walker;
