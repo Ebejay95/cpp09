@@ -66,10 +66,22 @@ void print_after_sort(const T& container, const std::string& container_name, dou
 }
 
 template <typename T>
+void leftover_extract(T& container, typename T::value_type& leftover, bool& has_leftover){
+	has_leftover = (container.size() % 2 != 0);
+	if (has_leftover) {
+		leftover = container.back();
+		container.pop_back();
+	}
+}
+
+template <typename T>
 double ford_johnson_sort(T& container) {
 	std::chrono::steady_clock::time_point start;
 	std::chrono::steady_clock::time_point end_time;
 	std::chrono::duration<double, std::micro> elapsed;
+	bool has_leftover;
+	typename T::value_type leftover;
+
 	start = std::chrono::high_resolution_clock::now();
 
 	if (container.size() <= 1)
@@ -78,6 +90,8 @@ double ford_johnson_sort(T& container) {
 		elapsed = end_time - start;
 		return elapsed.count();
 	}
+
+	leftover_extract(container, leftover, has_leftover);
 
 	end_time = std::chrono::high_resolution_clock::now();
 	elapsed = end_time - start;
