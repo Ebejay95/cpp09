@@ -75,12 +75,53 @@ void leftover_extract(T& container, typename T::value_type& leftover, bool& has_
 }
 
 template <typename T>
+void fill_mergables(T& container, T& a, T& b){
+	for (size_t i = 0; i < container.size(); i += 2) {
+		if (i + 1 < container.size()) {
+			b.push_back(container[i]);
+			a.push_back(container[i+1]);
+		} else {
+			b.push_back(container[i]);
+		}
+	}
+}
+
+template <typename T>
+T generate_jacobsthal(size_t size){
+	T jacobsthal;
+	jacobsthal.push_back(1);
+	jacobsthal.push_back(3);
+	while (jacobsthal.back() < static_cast<int>(size)) {
+		int next = jacobsthal[jacobsthal.size() - 1] + 2 * jacobsthal[jacobsthal.size() - 2];
+		jacobsthal.push_back(next);
+	}
+	return jacobsthal;
+}
+
+template <typename T>
+size_t binary_search_position(const T& main_chain, const typename T::value_type& element) {
+	size_t left = 0;
+	size_t right = main_chain.size();
+
+	while (left < right) {
+		size_t mid = left + (right - left) / 2;
+		if (main_chain[mid] < element) {
+			left = mid + 1;
+		} else {
+			right = mid;
+		}
+	}
+	return left;
+}
+
+template <typename T>
 double ford_johnson_sort(T& container) {
 	std::chrono::steady_clock::time_point start;
 	std::chrono::steady_clock::time_point end_time;
 	std::chrono::duration<double, std::micro> elapsed;
 	bool has_leftover;
 	typename T::value_type leftover;
+	T a, b, s, j;
 
 	start = std::chrono::high_resolution_clock::now();
 
@@ -91,7 +132,82 @@ double ford_johnson_sort(T& container) {
 		return elapsed.count();
 	}
 
+	std::cout << RED;
+	print_container(container);
+	std::cout << D << "\n";
+
 	leftover_extract(container, leftover, has_leftover);
+
+	std::cout << Y;
+	print_container(container);
+	std::cout << D << "\n";
+
+	for (size_t i = 0; i < container.size(); i += 2) {
+		if (i + 1 < container.size() && container[i] > container[i+1]) {
+			std::swap(container[i], container[i+1]);
+		}
+	}
+
+	fill_mergables(container, a, b);
+
+	std::cout << C;
+	print_container(a);
+	std::cout << D << "\n";
+
+	std::cout << B;
+	print_container(b);
+	std::cout << D << "\n";
+
+	if (a.size() > 1) {
+		ford_johnson_sort(a);
+	}
+
+	s = a;
+	j = generate_jacobsthal<T>(b.size());
+
+	std::cout << BG_RED;
+	print_container(s);
+	std::cout << D << "\n";
+
+	std::cout << BG_Y;
+	print_container(j);
+	std::cout << D << "\n";
+
+	T inserted(b.size(), 0);
+
+	std::cout << BG_W;
+	print_container(inserted);
+	std::cout << D << "\n";
+
+	for (size_t jdex = 0; jdex < j.size(); jdex++) {
+		int idx = j[jdex];
+		if (idx < static_cast<int>(b.size()) && !inserted[idx]) {
+			size_t pos = binary_search_position(s, b[idx]);
+			s.insert(s.begin() + pos, b[idx]);
+			inserted[idx] = 1;
+		}
+
+		int prev_idx = (jdex > 0) ? j[jdex - 1] : 0;
+		for (int i = idx - 1; i > prev_idx; i--) {
+			if (i >= static_cast<int>(b.size()) || inserted[i]) {
+				continue;
+			}
+
+			size_t pos = binary_search_position(s, b[i]);
+			s.insert(s.begin() + pos, b[i]);
+			inserted[i] = 1;
+		}
+	}
+
+	for (size_t i = 0; i < b.size(); i++) {
+		if (!inserted[i]) {
+			size_t pos = binary_search_position(s, b[i]);
+
+			s.insert(s.begin() + pos, b[i]);
+		}
+	}
+
+	container = s;
 
 	end_time = std::chrono::high_resolution_clock::now();
 	elapsed = end_time - start;
