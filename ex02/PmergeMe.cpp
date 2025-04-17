@@ -45,9 +45,25 @@ int PmergeMe::throw_error(std::string message) {
 }
 
 void PmergeMe::fill_containers(char *arg) {
+	std::string str_value(arg);
+
+	if (str_value.length() > 10) {
+		error = 1;
+		error_message = std::string("value \"") + arg + "\" exceeds maximum integer";
+		return;
+	}
+	else if (str_value.length() == 10) {
+		if (str_value > "2147483647") {
+			error = 1;
+			error_message = std::string("value \"") + arg + "\" exceeds maximum integer";
+			return;
+		}
+	}
+
 	std::stringstream ss(arg);
 	int num;
 	ss >> num;
+
 	pmerge_me_vector.push_back(num);
 	pmerge_me_deque.push_back(num);
 }
@@ -61,6 +77,8 @@ int PmergeMe::run(int argc, char *argv[]) {
 		if (!is_numeric(argv[walker]))
 			return throw_error(std::string("each argument must be numeric unsigned and \"") + argv[walker] + "\" is not");
 		fill_containers(argv[walker]);
+		if (error)
+			return throw_error(error_message);
 		walker++;
 	}
 	double time_deque = 0;

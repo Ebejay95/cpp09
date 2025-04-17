@@ -13,9 +13,8 @@ class BitcoinExchange {
 	private:
 		std::map<std::string, float> _database;
 
-		bool isValidDate(const std::string& date) const;
-		bool isValidValue(const float value) const;
-		std::string findClosestDate(const std::string& date) const;
+		bool is_valid_date(const std::string& date) const;
+		std::string find_closest_date(const std::string& date) const;
 
 	public:
 		BitcoinExchange();
@@ -24,9 +23,9 @@ class BitcoinExchange {
 		BitcoinExchange& operator=(const BitcoinExchange& rhs);
 		~BitcoinExchange();
 
-		bool loadDatabase(const std::string& databaseFile);
-		void processInputFile(const std::string& inputFile);
-		float getExchangeRate(const std::string& date) const;
+		bool load_database(const std::string& databaseFile);
+		void process_input_file(const std::string& inputFile);
+		float get_exchange_rate(const std::string& date) const;
 
 		class FileOpenException : public std::exception {
 			public:

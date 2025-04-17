@@ -3,7 +3,7 @@
 BitcoinExchange::BitcoinExchange() {}
 
 BitcoinExchange::BitcoinExchange(const std::string& databaseFile) {
-	loadDatabase(databaseFile);
+	load_database(databaseFile);
 }
 
 BitcoinExchange::BitcoinExchange(const BitcoinExchange& src) {
@@ -19,7 +19,7 @@ BitcoinExchange& BitcoinExchange::operator=(const BitcoinExchange& rhs) {
 
 BitcoinExchange::~BitcoinExchange() {}
 
-bool BitcoinExchange::isValidDate(const std::string& date) const {
+bool BitcoinExchange::is_valid_date(const std::string& date) const {
 	if (date.length() != 10 || date[4] != '-' || date[7] != '-')
 		return false;
 
@@ -47,11 +47,7 @@ bool BitcoinExchange::isValidDate(const std::string& date) const {
 	return true;
 }
 
-bool BitcoinExchange::isValidValue(const float value) const {
-	return value >= 0 && value <= 1000;
-}
-
-std::string BitcoinExchange::findClosestDate(const std::string& date) const {
+std::string BitcoinExchange::find_closest_date(const std::string& date) const {
 	if (_database.find(date) != _database.end())
 		return date;
 
@@ -67,7 +63,7 @@ std::string BitcoinExchange::findClosestDate(const std::string& date) const {
 	return it->first;
 }
 
-bool BitcoinExchange::loadDatabase(const std::string& databaseFile) {
+bool BitcoinExchange::load_database(const std::string& databaseFile) {
 	std::ifstream file(databaseFile.c_str());
 	if (!file.is_open())
 		throw FileOpenException();
@@ -81,7 +77,7 @@ bool BitcoinExchange::loadDatabase(const std::string& databaseFile) {
 		float value;
 
 		if (std::getline(iss, date, ',') && iss >> value) {
-			if (isValidDate(date)) {
+			if (is_valid_date(date)) {
 				_database[date] = value;
 			}
 		}
@@ -93,8 +89,8 @@ bool BitcoinExchange::loadDatabase(const std::string& databaseFile) {
 	return true;
 }
 
-float BitcoinExchange::getExchangeRate(const std::string& date) const {
-	std::string closestDate = findClosestDate(date);
+float BitcoinExchange::get_exchange_rate(const std::string& date) const {
+	std::string closestDate = find_closest_date(date);
 	std::map<std::string, float>::const_iterator it = _database.find(closestDate);
 
 	if (it != _database.end())
@@ -103,7 +99,7 @@ float BitcoinExchange::getExchangeRate(const std::string& date) const {
 	return 0.0f;
 }
 
-void BitcoinExchange::processInputFile(const std::string& inputFile) {
+void BitcoinExchange::process_input_file(const std::string& inputFile) {
 	std::ifstream file(inputFile.c_str());
 	if (!file.is_open())
 		throw FileOpenException();
@@ -121,14 +117,14 @@ void BitcoinExchange::processInputFile(const std::string& inputFile) {
 			date.erase(0, date.find_first_not_of(" \t"));
 			date.erase(date.find_last_not_of(" \t") + 1);
 
-			if (!isValidDate(date)) {
+			if (!is_valid_date(date)) {
 				std::cout << "Error: bad input => " << line << std::endl;
 			} else if (value < 0) {
 				std::cout << "Error: not a positive number." << std::endl;
 			} else if (value > 1000) {
 				std::cout << "Error: too large a number." << std::endl;
 			} else {
-				float rate = getExchangeRate(date);
+				float rate = get_exchange_rate(date);
 				float result = value * rate;
 				std::cout << date << " => " << value << " = " << result << std::endl;
 			}

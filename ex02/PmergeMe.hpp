@@ -8,6 +8,7 @@
 #include <locale>
 #include <sstream>
 #include <chrono>
+#include <iomanip>
 
 # define G "\033[0;32m"
 # define B "\033[0;34m"
@@ -17,14 +18,14 @@
 # define W "\033[0;97m"
 # define D "\033[0m"
 # define RED "\x1b[31m"
-#define BGB_RED     "\033[101m"
+#define BGB_RED "\033[101m"
 #define BGB_G "\033[102m"
 #define BGB_Y "\033[103m"
 #define BGB_B "\033[104m"
 #define BGB_M "\033[105m"
 #define BGB_C "\033[106m"
 #define BGB_W "\033[107m"
-#define BG_RED     "\033[41m"
+#define BG_RED "\033[41m"
 #define BG_G "\033[42m"
 #define BG_Y "\033[43m"
 #define BG_B "\033[44m"
@@ -33,6 +34,7 @@
 #define BG_W "\033[47m"
 #define BG_D "\033[49m"
 
+static int recursion_depth = 0;
 
 template <typename T>
 void print_container(const T& container, size_t grouper = 0) {
@@ -66,7 +68,7 @@ void print_after_sort(const T& container, const std::string& container_name, dou
 }
 
 template <typename T>
-void leftover_extract(T& container, typename T::value_type& leftover, bool& has_leftover){
+void leftover_extract(T& container, typename T::value_type& leftover, bool& has_leftover) {
 	has_leftover = (container.size() % 2 != 0);
 	if (has_leftover) {
 		leftover = container.back();
@@ -75,7 +77,7 @@ void leftover_extract(T& container, typename T::value_type& leftover, bool& has_
 }
 
 template <typename T>
-void fill_mergables(T& container, T& a, T& b){
+void fill_mergables(T& container, T& a, T& b) {
 	for (size_t i = 0; i < container.size(); i += 2) {
 		if (i + 1 < container.size()) {
 			b.push_back(container[i]);
@@ -87,100 +89,83 @@ void fill_mergables(T& container, T& a, T& b){
 }
 
 template <typename T>
-T generate_jacobsthal(size_t size){
+T generate_jacobsthal(size_t size) {
 	T jacobsthal;
 	jacobsthal.push_back(1);
 	jacobsthal.push_back(3);
+
 	while (jacobsthal.back() < static_cast<int>(size)) {
 		int next = jacobsthal[jacobsthal.size() - 1] + 2 * jacobsthal[jacobsthal.size() - 2];
 		jacobsthal.push_back(next);
 	}
+
 	return jacobsthal;
 }
 
 template <typename T>
-size_t binary_search_position(const T& main_chain, const typename T::value_type& element) {
+size_t binary_search_position(const T& s, const typename T::value_type& item) {
 	size_t left = 0;
-	size_t right = main_chain.size();
+	size_t right = s.size();
 
 	while (left < right) {
 		size_t mid = left + (right - left) / 2;
-		if (main_chain[mid] < element) {
+		if (s[mid] < item) {
 			left = mid + 1;
 		} else {
 			right = mid;
 		}
 	}
+
 	return left;
 }
 
 template <typename T>
 double ford_johnson_sort(T& container) {
-	std::chrono::steady_clock::time_point start;
-	std::chrono::steady_clock::time_point end_time;
+	std::chrono::high_resolution_clock::time_point start;
+	std::chrono::high_resolution_clock::time_point end_time;
 	std::chrono::duration<double, std::micro> elapsed;
 	bool has_leftover;
 	typename T::value_type leftover;
 	T a, b, s, j;
 
+	recursion_depth++;
+	std::string prefix(recursion_depth * 2, ' ');
+
 	start = std::chrono::high_resolution_clock::now();
 
-	if (container.size() <= 1)
-	{
+	if (container.size() <= 1) {
 		end_time = std::chrono::high_resolution_clock::now();
 		elapsed = end_time - start;
+		recursion_depth--;
 		return elapsed.count();
 	}
 
-	std::cout << RED;
-	print_container(container);
-	std::cout << D << "\n";
-
 	leftover_extract(container, leftover, has_leftover);
 
-	std::cout << Y;
-	print_container(container);
-	std::cout << D << "\n";
-
 	for (size_t i = 0; i < container.size(); i += 2) {
-		if (i + 1 < container.size() && container[i] > container[i+1]) {
-			std::swap(container[i], container[i+1]);
+		if (i + 1 < container.size()) {
+			if (container[i] > container[i+1]) {
+				std::swap(container[i], container[i+1]);
+			}
 		}
 	}
 
 	fill_mergables(container, a, b);
-
-	std::cout << C;
-	print_container(a);
-	std::cout << D << "\n";
-
-	std::cout << B;
-	print_container(b);
-	std::cout << D << "\n";
 
 	if (a.size() > 1) {
 		ford_johnson_sort(a);
 	}
 
 	s = a;
+
 	j = generate_jacobsthal<T>(b.size());
-
-	std::cout << BG_RED;
-	print_container(s);
-	std::cout << D << "\n";
-
-	std::cout << BG_Y;
-	print_container(j);
-	std::cout << D << "\n";
 
 	T inserted(b.size(), 0);
 
-	std::cout << BG_W;
-	print_container(inserted);
-	std::cout << D << "\n";
-
 	for (size_t jdex = 0; jdex < j.size(); jdex++) {
-		int idx = j[jdex];
+		int j_value = j[jdex];
+		int idx = j_value - 1;
+
 		if (idx < static_cast<int>(b.size()) && !inserted[idx]) {
 			size_t pos = binary_search_position(s, b[idx]);
 			s.insert(s.begin() + pos, b[idx]);
@@ -188,6 +173,7 @@ double ford_johnson_sort(T& container) {
 		}
 
 		int prev_idx = (jdex > 0) ? j[jdex - 1] : 0;
+
 		for (int i = idx - 1; i > prev_idx; i--) {
 			if (i >= static_cast<int>(b.size()) || inserted[i]) {
 				continue;
@@ -199,32 +185,43 @@ double ford_johnson_sort(T& container) {
 		}
 	}
 
+	bool remaining = false;
 	for (size_t i = 0; i < b.size(); i++) {
 		if (!inserted[i]) {
-			size_t pos = binary_search_position(s, b[i]);
+			if (!remaining) {
+				remaining = true;
+			}
 
+			size_t pos = binary_search_position(s, b[i]);
 			s.insert(s.begin() + pos, b[i]);
+			inserted[i] = 1;
 		}
 	}
 
 	container = s;
 
+	if (has_leftover) {
+		size_t pos = binary_search_position(container, leftover);
+		container.insert(container.begin() + pos, leftover);
+	}
+
 	end_time = std::chrono::high_resolution_clock::now();
 	elapsed = end_time - start;
+	recursion_depth--;
 	return elapsed.count();
 }
 
 class PmergeMe {
 	private:
-		std::vector<int>			pmerge_me_vector;
-		std::deque<int> 			pmerge_me_deque;
-		int							error;
-		std::string					error_message;
-		int							walker;
-		int							is_numeric(char *arg);
-		int							is_decimal(char c);
-		int							throw_error(std::string message);
-		void						fill_containers(char *arg);
+		std::vector<int>	pmerge_me_vector;
+		std::deque<int> 	pmerge_me_deque;
+		int					error;
+		std::string			error_message;
+		int					walker;
+		int					is_numeric(char *arg);
+		int					is_decimal(char c);
+		int					throw_error(std::string message);
+		void				fill_containers(char *arg);
 
 	public:
 									PmergeMe();

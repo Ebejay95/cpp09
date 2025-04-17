@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
 
 	try {
 		BitcoinExchange exchange("data.csv");
-		exchange.processInputFile(argv[1]);
+		exchange.process_input_file(argv[1]);
 	} catch (const std::exception& e) {
 		std::cout << e.what() << std::endl;
 		return 1;
